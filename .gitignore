@@ -1,0 +1,9 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BEGIN 
+# visual studio dirs
+Debug/
+x64/
+.vs/
+
+# visual studio files
+*.filters
+*.user
