@@ -1,0 +1,28 @@
+un-portable code:
+
+	texture loading.  
+		load texture from file then convert to openGL format
+		see gl_code.cpp 
+			Java_com_neusoft_particle_ObjectJNI_jni_1pushTexture
+
+	loading shaders from text files
+		use standard c/c++ file io to load shaders from disk
+
+	generating the rotation/orientation matrix
+		see particle.java -- public void onSensorChanged(SensorEvent event)
+
+		need to convert system pointer movement into an orientation matrix
+
+	tap to cycle draw modes.
+		use mouse click?
+
+
+todo:
+
+	non application specific tasks:
+		* setup github source control, task log
+		* initialize context.
+		* load, compile, link shaders
+		* load textures from system, poke into GL texture unit(s)
+		* configure game/render loop
+
