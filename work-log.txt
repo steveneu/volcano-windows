@@ -1,0 +1,14 @@
+work log, volcano port to windows
+
+10/31 -
+	* refactoring/porting work for windows application
+	* got shader file i/o coding working & compile/link
+	* added cpp for scenemanager
+
+10/27/2017 - 
+	* move project to z: drive
+	* initial setup of remote and local git repos, some initial checkins
+
+10/26/2017 - 
+	* create project, build glfw from source and add to project.  update & repair visual studio
+	

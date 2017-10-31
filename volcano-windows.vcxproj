@@ -126,6 +126,24 @@
   <ItemGroup>
     <ClCompile Include="glad\src\glad.c" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Matrix3x3.cpp" />
+    <ClCompile Include="Point.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Vec3.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="particle.fp" />
+    <None Include="particle.vp" />
+    <None Include="texmesh.fp" />
+    <None Include="texmesh.vp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Matrix3x3.h" />
+    <ClInclude Include="Particle.h" />
+    <ClInclude Include="Point.h" />
+    <ClInclude Include="ResizingArray.h" />
+    <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

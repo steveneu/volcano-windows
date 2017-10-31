@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
+#include "SceneManager.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -9,6 +9,8 @@ void processInput(GLFWwindow *window);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+using namespace std;
 
 int main()
 {
@@ -23,8 +25,8 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
 #endif
 
-														 // glfw window creation
-														 // --------------------
+	// glfw window creation
+	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL)
 	{
@@ -42,6 +44,15 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+	sceneManager scene;
+
+	scene.printGLString("Version", GL_VERSION);
+	scene.printGLString("Vendor", GL_VENDOR);
+	scene.printGLString("Renderer", GL_RENDERER);
+	scene.printGLString("Extensions", GL_EXTENSIONS);
+
+	scene.makePrograms("particle.vp", "particle.fp", "texmesh.vp", "texmesh.fp");
 
 	// render loop
 	// -----------

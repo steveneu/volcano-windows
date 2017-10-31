@@ -20,9 +20,21 @@ un-portable code:
 todo:
 
 	non application specific tasks:
-		* setup github source control, task log
-		* initialize context.
+		x setup github source control, task log
+		* initialize context. 
 		* load, compile, link shaders
+			gl_code.cpp - void sceneManager::createProgram l.809
 		* load textures from system, poke into GL texture unit(s)
 		* configure game/render loop
+
+-------------
+
+NORMAL SEQUENCE FOR CHECKINS:
+
+1) change necessary files
+2) git add .
+3) git commit -m"description"
+4) git push -u origin master
+
+
 
