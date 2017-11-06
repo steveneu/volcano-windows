@@ -27,7 +27,7 @@ int main()
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -36,6 +36,7 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSwapInterval(1);
 
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
@@ -47,12 +48,32 @@ int main()
 
 	sceneManager scene;
 
-	scene.printGLString("Version", GL_VERSION);
 	scene.printGLString("Vendor", GL_VENDOR);
 	scene.printGLString("Renderer", GL_RENDERER);
+	scene.printGLString("Version", GL_VERSION);
+	scene.printGLString("Shader compiler version", GL_SHADING_LANGUAGE_VERSION);
 	scene.printGLString("Extensions", GL_EXTENSIONS);
+	GLint64 majorVersion = 0;
+	GLint64 minorVersion = 0;
+	glGetInteger64v(GL_MAJOR_VERSION, &majorVersion);
+	glGetInteger64v(GL_MINOR_VERSION, &minorVersion);
 
 	scene.makePrograms("particle.vp", "particle.fp", "texmesh.vp", "texmesh.fp");
+
+	// TODO: need equivalent of Java_com_neusoft_particle_ObjectJNI_jni_1pushTexture here
+	// when ready with texture file loading
+	scene.initTextures();
+
+	scene.surfaceChanged(SCR_WIDTH, SCR_HEIGHT);
+	//float orientation[] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+	float* orientation;
+	
+	Matrix3x3 orientationMat;
+	orientationMat.makeIdentity();
+	orientation = orientationMat.get();
+
+	scene.storeOrientation(orientation);
+	scene.setupBuffers();
 
 	// render loop
 	// -----------
@@ -64,8 +85,8 @@ int main()
 
 		// render
 		// ------
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		scene.drawSanityFrame();
+		//scene.drawFrame();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------

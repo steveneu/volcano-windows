@@ -10,7 +10,7 @@ sceneManager::sceneManager() {
 	drawModes[1] = OBELISK | PARTICLES | GROUND | WIREFRAME;
 	drawModes[2] = OBELISK | PARTICLES | GROUND | TEXTURE;
 
-	current_mode = 2;
+	current_mode = 1;// 2;
 	drawFlags = drawModes[current_mode];
 
 	mProgram_particles = mProgram_texmesh = 0;
@@ -25,7 +25,8 @@ sceneManager::sceneManager() {
 	colordata[2] = 1.0f;
 	colordata[3] = 1.0f;
 
-	particles_per_sec = framesdrawn = intervalbegin = updatetime = lastParticleTime = 0;  // the mean number of particles generated per interval (second)
+	particles_per_sec = framesdrawn = 0;
+	intervalbegin = updatetime = lastParticleTime = 0;  // the mean number of particles generated per interval (second)
 	updates_second = particle_life = 0;
 	arraysize = 200;
 
@@ -46,7 +47,7 @@ sceneManager::sceneManager() {
 	vCameraPos[2] = 3;
 	vCameraPos[3] = 1;
 
-	gravity.set(0, 0, -0.000098);
+	gravity.set(0.0f, 0.0f, -0.000098f);
 
 	// this value can affect the trajectory height of the particles.  should be factored into particle position update
 	updates_second = 48;
@@ -153,7 +154,7 @@ float sceneManager::rnd_float(void) {
 	return result;
 }
 
-float sceneManager::toRadians(double degrees) {
+float sceneManager::toRadians(float degrees) {
 	return M_PI / 180 * degrees;
 }
 
@@ -178,7 +179,7 @@ void sceneManager::storeTexture(GLubyte* tex, int width, int height) {
 		GL_RGBA, // format of texels, should match 3rd parameter
 		GL_UNSIGNED_BYTE, //
 		tex); // pointer to image data
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 }
 
 // use this for generated textures, call from initialize() NOTE: not currently used
@@ -231,7 +232,7 @@ void sceneManager::initTextures() {
 
 					 // at this point can release memory?
 	delete[] checkImage;
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 }
 
 void sceneManager::setupGroundData() {
@@ -259,21 +260,21 @@ void sceneManager::setupGroundData() {
 
 	// store texture coordinates for volcano
 	GLfloat volcanoTexCoords[] = {
-		.8941, .0352, // apex            228, 10     .8906, .0391
-		.7843, .1137, // bottom left   204, 27      .7969, .1055
-		1.0, .1137, // bottom right    255, 27      1.0,    .1055
+		.8941f, .0352f, // apex            228, 10     .8906, .0391
+		.7843f, .1137f, // bottom left   204, 27      .7969, .1055
+		1.0f, .1137f, // bottom right    255, 27      1.0,    .1055
 
-		.8941, .0352, // apex            228, 10     .8906, .0391
-		.7843, .1137, // bottom left   204, 27      .7969, .1055
-		1.0, .1137, // bottom right    255, 27      1.0,    .1055
+		.8941f, .0352f, // apex            228, 10     .8906, .0391
+		.7843f, .1137f, // bottom left   204, 27      .7969, .1055
+		1.0f, .1137f, // bottom right    255, 27      1.0,    .1055
 
-		.8941, .0352, // apex            228, 10     .8906, .0391
-		.7843, .1137, // bottom left   204, 27      .7969, .1055
-		1.0, .1137, // bottom right    255, 27      1.0,    .1055
+		.8941f, .0352f, // apex            228, 10     .8906, .0391
+		.7843f, .1137f, // bottom left   204, 27      .7969, .1055
+		1.0f, .1137f, // bottom right    255, 27      1.0,    .1055
 
-		.8941, .0352, // apex            228, 10     .8906, .0391
-		.7843, .1137, // bottom left   204, 27      .7969, .1055
-		1.0, .1137 // bottom right    255, 27      1.0,    .1055
+		.8941f, .0352f, // apex            228, 10     .8906, .0391
+		.7843f, .1137f, // bottom left   204, 27      .7969, .1055
+		1.0f, .1137f // bottom right    255, 27      1.0,    .1055
 	};
 
 	int stCountVolcano = sizeof(volcanoTexCoords) / sizeof(*volcanoTexCoords);
@@ -284,10 +285,10 @@ void sceneManager::setupGroundData() {
 
 	// store texture coordinates for ground
 	GLfloat groundTexCoords[] = {
-		0.0, 1.0,
-		0.777, 1.0,
-		0.777, 0.0,
-		0.0, 0.0
+		0.0f, 1.0f,
+		0.777f, 1.0f,
+		0.777f, 0.0f,
+		0.0f, 0.0f
 	};
 
 	int stCount = sizeof(groundTexCoords) / sizeof(*groundTexCoords);
@@ -469,34 +470,90 @@ void sceneManager::storeOrientation(float* in) {
 
 void sceneManager::printGLString(const char *name, GLenum s) {
 	const char *v = (const char *)glGetString(s);
+	if (v!=0) {
+		char format_string[] = "GL %s: %s\n";
+
+		size_t string_size = strlen(name) + strlen(v) + strlen(format_string);
+		char* message = new char[string_size];
+		memset(message, '\0', string_size);
+		sprintf_s(message, string_size-1, format_string, name, v);
+	
+		OutputDebugString(message);
+		delete[] message;
+	}
 	//LOGI("GL %s = %s\n", name, v);
 }
 
+// errors defined in glad.h when using glad
 void sceneManager::checkGlError(const char* op) {
-	for (GLint error = glGetError(); error; error = glGetError()) {
+	for (GLint error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
+		char str_value[10] = { 0 };
+		_itoa_s(error, str_value, 16);
+		char format_string[] = "after %s() glError (0x%x)\n";
+		size_t string_size = strlen(op) + strlen(format_string) + strlen(str_value);
+		char* message = new char[string_size];
+		
+		sprintf_s(message, string_size, format_string, op, error);
+		OutputDebugString(message);
+		delete[] message;
+
 		//LOGI("after %s() glError (0x%x)\n", op, error);
 	}
 }
 
+//GLuint sceneManager::loadShader(GLenum shaderType, const char* pSource) {
+//	GLuint shader = glCreateShader(shaderType);
+//	if (shader) {
+//		glShaderSource(shader, 1, &pSource, NULL);
+//		glCompileShader(shader);
+//		GLint compiled = 0;
+//		glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+//		if (!compiled) {
+//			GLint infoLen = 0;
+//			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+//			if (infoLen) {
+//				char* buf = new char[infoLen];
+//				if (buf) {
+//					glGetShaderInfoLog(shader, infoLen, NULL, buf);
+//					//LOGE("Could not compile shader %d:\n%s\n",
+//					//     shaderType, buf);
+//					delete[] buf;
+//				}
+//				glDeleteShader(shader);
+//				shader = 0;
+//			}
+//		}
+//	}
+//	return shader;
+//}
+
 GLuint sceneManager::loadShader(GLenum shaderType, const char* pSource) {
 	GLuint shader = glCreateShader(shaderType);
+	checkGlError("glCreateShader");
+
 	if (shader) {
 		glShaderSource(shader, 1, &pSource, NULL);
+		checkGlError("glShaderSource");
 		glCompileShader(shader);
+		checkGlError("glCompileShader");
 		GLint compiled = 0;
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+		checkGlError("glGetShaderiv");
 		if (!compiled) {
 			GLint infoLen = 0;
 			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+			checkGlError("glGetShaderiv");
 			if (infoLen) {
 				char* buf = new char[infoLen];
 				if (buf) {
 					glGetShaderInfoLog(shader, infoLen, NULL, buf);
+					checkGlError("glGetShaderInfoLog");
 					//LOGE("Could not compile shader %d:\n%s\n",
 					//     shaderType, buf);
 					delete[] buf;
 				}
 				glDeleteShader(shader);
+				checkGlError("glDeleteShader");
 				shader = 0;
 			}
 		}
@@ -574,6 +631,7 @@ void sceneManager::createProgram(GLuint* program, const char* pVertexSource, con
 	}
 
 	/*gProgram*/ *program = glCreateProgram();
+	checkGlError("glCreateProgram");
 	if (*program) {
 		glAttachShader(*program, vertexShader);
 		checkGlError("glAttachShader");
@@ -644,6 +702,89 @@ void sceneManager::setBasicProgram() {
 	glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix.get());
 }
 
+void sceneManager::setupBuffers() {
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	GLfloat triangle[] = { // 12 elements
+		0.0,  0.0, 0.0,      // a, 0  // ground vertices
+		1.0, 1.0, 0.0,      // b, 1
+		1.0, 0.0, 0.0,      // c, 2
+	};
+
+	GLfloat colorData[] = {
+		1.0,  1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+	};
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle) + sizeof(colorData), NULL, GL_STATIC_DRAW);
+
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(triangle), triangle);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(triangle), sizeof(colorData), colorData);
+
+	vertex_attrib_idx = glGetAttribLocation(mProgram_particles, "vPosition");
+	glVertexAttribPointer(static_cast<GLuint>(vertex_attrib_idx),
+		3, // # of components per vertex attribute. Must be 1, 2, 3, or 4.
+		GL_FLOAT, // data type for component
+		GL_FALSE, // Normalized?
+		0, //3 * sizeof(GLfloat), // byte offset between vertex attributes. attribute is a set of elements
+		0); // offset into GL_ARRAY_BUFFER
+
+	color_attrib_idx = glGetAttribLocation(mProgram_particles, "vColor");
+	glVertexAttribPointer(static_cast<GLuint>(color_attrib_idx),
+		3, // # of components per generic vertex attribute
+		GL_FLOAT,
+		GL_FALSE, // normalized?
+		0, //3 * sizeof(GLfloat), // byte offset between attributes. attribute is a set of elements
+		(const GLvoid*)sizeof(triangle));
+
+	GLushort indices_triangle[] = { 0,1,2 }; // GL_TRIANGLES
+
+	glGenBuffers(1, &indexbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_triangle), indices_triangle, GL_STATIC_DRAW);
+}
+
+// draw a simple triangle in the x-y plane as a sanity test for correct GL and scene setup
+void sceneManager::drawSanityFrame() {
+	changeLookAt();
+
+	mProjMatrix.debugPrint(debugLog, "mProjMatrix");
+	mVMatrix.debugPrint(debugLog, "mVMatrix");
+	Matrix3x3::mul(mMVPMatrix, mProjMatrix, mVMatrix); // result, lhs, rhs (result = lhs x rhs)
+
+	mMVPMatrix.debugPrint(debugLog, "mMVPMatrix");
+
+	// clear frame buffer
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Use basic shader for santiy drawing
+	glUseProgram(mProgram_particles);
+	muMVPMatrixHandle = glGetUniformLocation(mProgram_particles, "uMVPMatrix");
+	glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix.get());
+
+	vertex_attrib_idx = glGetAttribLocation(mProgram_particles, "vPosition");
+	color_attrib_idx = glGetAttribLocation(mProgram_particles, "vColor");
+
+	glEnableVertexAttribArray(vertex_attrib_idx);
+	glEnableVertexAttribArray(color_attrib_idx);
+
+	//GLushort indices_triangle[] = { 0,1,2 }; // GL_TRIANGLES
+
+	glDrawElements(GL_TRIANGLES, 
+		3,    // # of indicies in index array (# of short values, last param)
+		GL_UNSIGNED_SHORT,             // data type of index array
+		(const GLvoid*)0);   // indicies_array
+
+	glDisableVertexAttribArray(vertex_attrib_idx);
+	glDisableVertexAttribArray(color_attrib_idx);
+}
+
 void sceneManager::drawFrame() {
 	ULONGLONG timeSincelastupdate = now_ms()/*SystemClock.elapsedRealtime()*/
 		- updatetime;
@@ -663,25 +804,36 @@ void sceneManager::drawFrame() {
 		// remove particles that are past their lifetime.
 		// currently only removes the first expired particle encountered in the list
 		// this should be ok considering the frequency the list is checked
-		for (int i = 0; i < particles.size(); i++) {
-			if (particles[i].expired()) {
-				//                    particles.remove(i);
-				if (i < particles.size()) {
-					// remove item at position i
-					std::vector<AParticle>::iterator it;
-					it = particles.begin();
-					int position = 1;
-					while (it != particles.end()) {
-						if (position == i)
-							break;
-						it++;
+		{
+			vector<AParticle>::iterator it = particles.begin();
+				while (it != particles.end()) {
+					if ((*it).expired()) {
+						particles.erase(it);
+						break;
 					}
-					particles.erase(it);
-					// end remove
+					it++;
 				}
-				break;
-			}
 		}
+
+		//for (int i = 0; i < particles.size(); i++) {
+		//	if (particles[i].expired()) {
+		//		//                    particles.remove(i);
+		//		if (i < particles.size()) {
+		//			// remove item at position i
+		//			std::vector<AParticle>::iterator it;
+		//			it = particles.begin();
+		//			int position = 1;
+		//			while (it != particles.end()) {
+		//				if (position == i)
+		//					break;
+		//				it++;
+		//			}
+		//			particles.erase(it);
+		//			// end remove
+		//		}
+		//		break;
+		//	}
+		//}
 
 		// Generate particles
 		//        long millis_since_last_particle = now_ms() - lastParticleTime;
@@ -876,7 +1028,7 @@ void sceneManager::drawFrame() {
 	// every few seconds, write average fps over the last 10 seconds to log
 	if (now_ms() - intervalbegin > 4000)// velocity and direction of particle
 	{
-		long elapsed = now_ms() - intervalbegin;
+		ULONGLONG elapsed = now_ms() - intervalbegin;
 		double fps = static_cast<double>(framesdrawn) / static_cast<double>(elapsed / 1000);
 		//            Log.d(TAG, "fps: " + fps);
 		// ALOG("This message comes from C at line %d.", __LINE__);

@@ -3,6 +3,7 @@
 //
 
 #include "Matrix3x3.h"
+#include "strsafe.h"
 
 
 void Matrix3x3::copym(const Matrix3x3& rhs) {
@@ -277,6 +278,34 @@ void Matrix3x3::setcol(int c, const Vec3& v) {
 
 void Matrix3x3::debugPrint(bool debugPrint, const char* matrix_id) {
     if (debugPrint) {
+		char firstLineFormat[] = "%s: \n";
+		char matrixRowFormat[] = "\t%.3f\t%.3f\t%.3f\t%.3f\n";
+		int string_size = strlen(matrix_id) + strlen(firstLineFormat);
+		char* message = new char[string_size];
+		memset(message, '\0', string_size);
+		sprintf_s(message, string_size, firstLineFormat, matrix_id);
+		OutputDebugString(message);
+		delete[] message;
+
+		string_size = strlen(matrixRowFormat) + 4 * 5; // 4 values, 5 chars/value
+		char* rowstring = new char[string_size];
+		memset(rowstring, '\0', string_size);
+		sprintf_s(rowstring, string_size, matrixRowFormat, m[0], m[4], m[8], m[12]);
+		OutputDebugString(rowstring);
+
+		memset(rowstring, '\0', string_size);
+		sprintf_s(rowstring, string_size, matrixRowFormat, m[1], m[5], m[9], m[13]);
+		OutputDebugString(rowstring);
+
+		memset(rowstring, '\0', string_size);
+		sprintf_s(rowstring, string_size, matrixRowFormat, m[2], m[6], m[10], m[14]);
+		OutputDebugString(rowstring);
+
+		memset(rowstring, '\0', string_size);
+		sprintf_s(rowstring, string_size, matrixRowFormat, m[3], m[7], m[11], m[15]);
+		OutputDebugString(rowstring);
+
+		delete[] rowstring;
         //LOGI("%s: \n", matrix_id);
         //LOGI("\t%.3f\t%.3f\t%.3f\t%.3f", m[0], m[4], m[8], m[12]);
         //LOGI("\t%.3f\t%.3f\t%.3f\t%.3f", m[1], m[5], m[9], m[13]);

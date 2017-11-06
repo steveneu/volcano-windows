@@ -21,8 +21,8 @@ todo:
 
 	non application specific tasks:
 		x setup github source control, task log
-		* initialize context. 
-		* load, compile, link shaders
+		x initialize context. 
+		x load, compile, link shaders
 			gl_code.cpp - void sceneManager::createProgram l.809
 		* load textures from system, poke into GL texture unit(s)
 		* configure game/render loop

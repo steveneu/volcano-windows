@@ -26,7 +26,7 @@ static const int vCount = 48;              // number of values in vertex array f
 static const int particleCount = 200;
 static const bool drawParticles = false;
 
-const double M_PI = 3.14159265358979323;
+const float M_PI = 3.14159265f;// 358979323;
 
 class sceneManager {
 	static const int mode_count = 3;
@@ -75,6 +75,10 @@ class sceneManager {
 	float obeliskVertices[48];
 	float colordata[4];
 
+	GLuint vao;
+	GLuint vbo;
+	GLuint indexbo;
+
 	ResizingArray<GLfloat>* volcanoComponents;
 	ResizingArray<GLushort>* volcanoIndices;
 	ResizingArray<GLfloat>* volcanoColors;
@@ -119,7 +123,7 @@ class sceneManager {
 	// helper functions
 	ULONGLONG sceneManager::now_ms(void);
 	float sceneManager::rnd_float(void);
-	float sceneManager::toRadians(double degrees);
+	float sceneManager::toRadians(float degrees);
 
 public:
 	sceneManager();
@@ -143,5 +147,7 @@ public:
 	void createPrograms(const char* pVertexSource, const char* pFragmentSource,
 		const char* pVertexTextureSrc, const char* pFragmentTextureSrc);
 	void surfaceChanged(int w, int h);
+	void setupBuffers();
 	void drawFrame();
+	void drawSanityFrame();
 };

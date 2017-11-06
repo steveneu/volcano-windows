@@ -1,8 +1,8 @@
-#version 100
+#version 330
 
 uniform sampler2D texture_unit;
 
-varying vec2 vVaryingTexCoords;
+in vec2 vVaryingTexCoords;
 
 void main()
 {

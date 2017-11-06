@@ -1,7 +1,7 @@
-#version 100
+#version 330
 
 precision mediump float;  
-varying mediump vec4 fscolor;
+in mediump vec4 fscolor;
 
 void main()
 {

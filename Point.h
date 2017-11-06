@@ -5,6 +5,8 @@
 #ifndef PARTICLE_PORT_STUDIO_POINT_H
 #define PARTICLE_PORT_STUDIO_POINT_H
 
+#include "windows.h" // for OutputDebugString()
+
 // represents a point in Cartesian R^3 or R^2 space
 class Vec3;
 
