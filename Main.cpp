@@ -12,8 +12,36 @@ const unsigned int SCR_HEIGHT = 600;
 
 using namespace std;
 
+// The callback functions receives the cursor position, measured in screen coordinates but relative to the top - left corner 
+// of the window client area.On platforms that provide it, the full sub - pixel cursor position is passed on.
+
+static float rotAboutx; // rotation about x-axis
+static float rotAbouty; // rotation about y-axis
+
+static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	int halfwidth = width / 2;
+	int halfheight = height / 2;
+
+	// xpos-halfwidth gives displacement from the center of the window
+	float rotation_pct_x = static_cast<float>(xpos - halfwidth) / static_cast<float>(halfwidth);
+	rotAbouty = M_PI * rotation_pct_x; // compute rotation about y in radians
+
+	float rotation_pct_y = static_cast<float>(ypos - halfheight) / static_cast<float>(halfheight);
+	rotAboutx = M_PI * rotation_pct_y; // compute rotation about y in radians
+
+	char message[200] = { 0 };
+	char formatstr[] = "\ncursor position -- xpos: %f, ypos %f angle about y: %f angle about x: %f";
+	sprintf_s(message, 200, formatstr, xpos, ypos, rotAbouty, rotAboutx);
+	OutputDebugString(message);
+}
+
 int main()
 {
+	rotAboutx = 0.0;
+	rotAbouty = 0.0;
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
@@ -27,13 +55,18 @@ int main()
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Volcano", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
+
+	// setup cursor control of orientation.  hide the cursor and lock it to the specified window. 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
+
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSwapInterval(1);
@@ -73,7 +106,10 @@ int main()
 	orientation = orientationMat.get();
 
 	scene.storeOrientation(orientation);
-	scene.setupBuffers();
+	//scene.sanityCheckSetup();
+
+	//glfwSetCursorPos(window, static_cast<double>(SCR_WIDTH), static_cast<double>(SCR_HEIGHT));
+	glfwSetCursorPos(window, SCR_WIDTH/2, SCR_HEIGHT/2);
 
 	// render loop
 	// -----------
@@ -85,13 +121,18 @@ int main()
 
 		// render
 		// ------
-		scene.drawSanityFrame();
-		//scene.drawFrame();
+		//scene.drawSanityFrame();
+		scene.drawFrame();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		// update orientation matrix
+		orientationMat.makeRotation(rotAboutx, rotAbouty, 0);
+		orientation = orientationMat.get();
+		scene.storeOrientation(orientation);
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.

@@ -9,7 +9,7 @@
 #include "Vec3.h"
 
 // represents a 3x3 matrix with homogeneous representation (4x4) in
-// column major format (OpenGL)
+// column major format; same as OpenGL
 class Matrix3x3 {
     float m[16];
     void copym(const Matrix3x3& rhs);
@@ -28,10 +28,11 @@ public:
     float* get(void);
     void makeIdentity(void);
     void makeTranslation(float a, float b, float c);
+	void makeRotation(float phi, float theta, float psi = 0.0);
     void getRow(Vec3& result, int r) const;
     void getCol(Vec3& result, int c) const;
     void mul(Vec3& result, const Vec3& rhs);
-    void debugPrint(bool debugPrint, const char* matrix_id);
+	void debugPrint(unsigned int debugPrintFlags, const char* matrix_id);
     static void mul(Vec3& result, const Matrix3x3& lhs, const Vec3& rhs);
     static void mul(Matrix3x3& result, const Matrix3x3& first, const Matrix3x3& second);
     static void setLookAt(Matrix3x3& result, const Point& eye, const Point& center, const Vec3& up);

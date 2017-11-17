@@ -19,13 +19,23 @@ un-portable code:
 
 todo:
 
+	* changeLookAt() is called once per frame, probably only need to multiply orientation matrix, 
+		store other values (as members):
+			target, upvector, camerapos
+
+	x fix back/front facing triangles
+	~ draw diagram of camera setup, tape to wall
+	x particles seem to be clipped, not drawing emitter location (or color is black?)
+
 	non application specific tasks:
 		x setup github source control, task log
 		x initialize context. 
 		x load, compile, link shaders
 			gl_code.cpp - void sceneManager::createProgram l.809
+
 		* load textures from system, poke into GL texture unit(s)
 		* configure game/render loop
+
 
 -------------
 

@@ -4,11 +4,11 @@
 sceneManager::sceneManager() {
 	drawFlags = OBELISK | PARTICLES | GROUND; // controls what objects are drawn (obelisk, particles, textures, etc.)
 											  //    drawFlags = OBELISK | PARTICLES | GROUND;
-	debugLog = false;
-
 	drawModes[0] = OBELISK | PARTICLES | GROUND;
 	drawModes[1] = OBELISK | PARTICLES | GROUND | WIREFRAME;
 	drawModes[2] = OBELISK | PARTICLES | GROUND | TEXTURE;
+
+	debugPrintFlags = GLENVIRONMENT | CURSOR; // CURSOR, GLENVIRONMENT, GLERROR, PARTICLEINFO, MATRIX 
 
 	current_mode = 1;// 2;
 	drawFlags = drawModes[current_mode];
@@ -52,8 +52,19 @@ sceneManager::sceneManager() {
 	// this value can affect the trajectory height of the particles.  should be factored into particle position update
 	updates_second = 48;
 
-	particles_per_sec = 5; // 12; // 50; // 12; //5
+	particles_per_sec = 12; // 12; // 50; // 12; //5
 	particle_life = 10; // 2000;
+
+	// global vertex array object for now
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo_particles);
+	glGenBuffers(1, &vbo_particle_indices);
+	glGenBuffers(1, &vbo_volcano);
+	glGenBuffers(1, &vbo_volcano_indices);
+
+	glEnable(GL_CULL_FACE);
 
 	setupVolcanoData();
 	setupParticleData();
@@ -123,21 +134,61 @@ void sceneManager::setupVolcanoData() {
 	volcanoColors->add(0.0);
 	volcanoColors->add(0.0);
 
-	volcanoColors->add(0.0); //1
-	volcanoColors->add(1.0);
+	volcanoColors->add(1.0); //1
+	volcanoColors->add(0.0);
 	volcanoColors->add(0.0);
 
-	volcanoColors->add(0.0); //2
+	volcanoColors->add(1.0); //2
 	volcanoColors->add(0.0);
-	volcanoColors->add(1.0);
+	volcanoColors->add(0.0);
 
-	volcanoColors->add(0.5); //3
-	volcanoColors->add(0.0);
+	volcanoColors->add(0.0); //3
 	volcanoColors->add(0.5);
+	volcanoColors->add(0.0);
 
-	volcanoColors->add(1.0); //4
+	volcanoColors->add(0.0); //4
+	volcanoColors->add(0.5);
+	volcanoColors->add(0.0);
+
+	volcanoColors->add(0.0); //5
+	volcanoColors->add(0.5);
+	volcanoColors->add(0.0);
+
+	volcanoColors->add(0.0); //6
+	volcanoColors->add(0.0);
 	volcanoColors->add(1.0);
+
+	volcanoColors->add(0.0); //7
+	volcanoColors->add(0.0);
 	volcanoColors->add(1.0);
+
+	volcanoColors->add(0.0); //8
+	volcanoColors->add(0.0);
+	volcanoColors->add(1.0);
+
+	volcanoColors->add(1.0); //9
+	volcanoColors->add(1.0);
+	volcanoColors->add(0.0);
+
+	volcanoColors->add(1.0); //10
+	volcanoColors->add(1.0);
+	volcanoColors->add(0.0);
+
+	volcanoColors->add(1.0); //11
+	volcanoColors->add(1.0);
+	volcanoColors->add(0.0);
+
+	int volcanoVertsBytes = volcanoComponents->size() * sizeof(float);
+	int volcanoColorsBytes = volcanoColors->size() * sizeof(float);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_volcano);
+	glBufferData(GL_ARRAY_BUFFER, volcanoVertsBytes + volcanoColorsBytes, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER,					0,	 volcanoVertsBytes,		volcanoComponents->data());
+	glBufferSubData(GL_ARRAY_BUFFER,    volcanoVertsBytes,  volcanoColorsBytes,		volcanoColors->data());
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_volcano_indices);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * volcanoIndices->size(), volcanoIndices->data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 // return current time in milliseconds
@@ -339,7 +390,7 @@ void sceneManager::setupParticleData() {
 		}
 
 		// 4 floats per color(rgba), 2 colors per particle (each end of line seg.)
-		particleColors = new ResizingArray<GLfloat>(4 * 2 * particleCount);
+		particleColors = new ResizingArray<GLfloat>(3 * 2 * particleCount);
 
 		//        for(int j=0; j<particleCount; j++) {
 		//            // line segment starts at red..
@@ -439,19 +490,19 @@ void sceneManager::changeLookAt() {
 
 	upVector.set(vUpVector[0], vUpVector[1], vUpVector[2]);
 
-	//    muMVPMatrixHandle = glGetUniformLocation(mProgram_particles, "uMVPMatrix");
+	// muMVPMatrixHandle = glGetUniformLocation(mProgram_particles, "uMVPMatrix");
 	Vec3 target(0, 0, 0);
 
 	// old look at matrix was hardcoded, now use handbuilt setLookAt()
 	setLookAt(mLookAtMat, cameraPos, target, upVector);
 
-	mLookAtMat.debugPrint(debugLog, "mLookAtMat");
-	mOrientation.debugPrint(debugLog, "mOrientation");
+	mLookAtMat.debugPrint(debugPrintFlags, "mLookAtMat");
+	mOrientation.debugPrint(debugPrintFlags, "mOrientation");
 
 	Matrix3x3::mul(mVMatrix, mLookAtMat, mOrientation);
 
 	// mVMatrix is combined with projection matrix in drawframe()
-	mVMatrix.debugPrint(debugLog, "mVMatrix");
+	mVMatrix.debugPrint(debugPrintFlags, "mVMatrix");
 }
 
 void sceneManager::toggleTouchdown() {
@@ -469,35 +520,39 @@ void sceneManager::storeOrientation(float* in) {
 }
 
 void sceneManager::printGLString(const char *name, GLenum s) {
-	const char *v = (const char *)glGetString(s);
-	if (v!=0) {
-		char format_string[] = "GL %s: %s\n";
+	if (debugPrintFlags & GLENVIRONMENT) {
+		const char *v = (const char *)glGetString(s);
+		if (v!=0) {
+			char format_string[] = "GL %s: %s\n";
 
-		size_t string_size = strlen(name) + strlen(v) + strlen(format_string);
-		char* message = new char[string_size];
-		memset(message, '\0', string_size);
-		sprintf_s(message, string_size-1, format_string, name, v);
+			size_t string_size = strlen(name) + strlen(v) + strlen(format_string);
+			char* message = new char[string_size];
+			memset(message, '\0', string_size);
+			sprintf_s(message, string_size-1, format_string, name, v);
 	
-		OutputDebugString(message);
-		delete[] message;
+			OutputDebugString(message);
+			delete[] message;
+		}
+		//LOGI("GL %s = %s\n", name, v);
 	}
-	//LOGI("GL %s = %s\n", name, v);
 }
 
 // errors defined in glad.h when using glad
 void sceneManager::checkGlError(const char* op) {
-	for (GLint error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
-		char str_value[10] = { 0 };
-		_itoa_s(error, str_value, 16);
-		char format_string[] = "after %s() glError (0x%x)\n";
-		size_t string_size = strlen(op) + strlen(format_string) + strlen(str_value);
-		char* message = new char[string_size];
+	if (debugPrintFlags & GLERROR) {
+		for (GLint error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
+			char str_value[10] = { 0 };
+			_itoa_s(error, str_value, 16);
+			char format_string[] = "after %s() glError (0x%x)\n";
+			size_t string_size = strlen(op) + strlen(format_string) + strlen(str_value);
+			char* message = new char[string_size];
 		
-		sprintf_s(message, string_size, format_string, op, error);
-		OutputDebugString(message);
-		delete[] message;
+			sprintf_s(message, string_size, format_string, op, error);
+			OutputDebugString(message);
+			delete[] message;
 
-		//LOGI("after %s() glError (0x%x)\n", op, error);
+			//LOGI("after %s() glError (0x%x)\n", op, error);
+		}
 	}
 }
 
@@ -669,16 +724,22 @@ void sceneManager::surfaceChanged(int w, int h) {
 	{
 		glViewport(0, 0, w, h);
 
-		if (h>w) {
-			vUpVector[0] = 0.0f;
-			vUpVector[1] = 1.0f;
-			vUpVector[2] = 0.0f;
-		}
-		else {
-			vUpVector[0] = 1.0f;
-			vUpVector[1] = 0.0f;
-			vUpVector[2] = 0.0f;
-		}
+		// for desktop, orientation does not change width is greater than height
+		vUpVector[0] = 0.0f;
+		vUpVector[1] = 1.0f;
+		vUpVector[2] = 0.0f;
+
+		// for mobile phones
+		//if (h>w) {
+		//	vUpVector[0] = 0.0f;
+		//	vUpVector[1] = 1.0f;
+		//	vUpVector[2] = 0.0f;
+		//}
+		//else {
+		//	vUpVector[0] = 1.0f;
+		//	vUpVector[1] = 0.0f;
+		//	vUpVector[2] = 0.0f;
+		//}
 
 		Matrix3x3::frustum(mProjMatrix, -1, 1, -1, 1, 1, 8); // make projection matrix given clip planes
 
@@ -702,12 +763,12 @@ void sceneManager::setBasicProgram() {
 	glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix.get());
 }
 
-void sceneManager::setupBuffers() {
+void sceneManager::sanityCheckSetup() {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glGenBuffers(1, &vbo_sanity);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_sanity);
 
 	GLfloat triangle[] = { // 12 elements
 		0.0,  0.0, 0.0,      // a, 0  // ground vertices
@@ -744,8 +805,8 @@ void sceneManager::setupBuffers() {
 
 	GLushort indices_triangle[] = { 0,1,2 }; // GL_TRIANGLES
 
-	glGenBuffers(1, &indexbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbo);
+	glGenBuffers(1, &indexbo_sanity);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbo_sanity);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_triangle), indices_triangle, GL_STATIC_DRAW);
 }
 
@@ -753,11 +814,11 @@ void sceneManager::setupBuffers() {
 void sceneManager::drawSanityFrame() {
 	changeLookAt();
 
-	mProjMatrix.debugPrint(debugLog, "mProjMatrix");
-	mVMatrix.debugPrint(debugLog, "mVMatrix");
+	mProjMatrix.debugPrint(debugPrintFlags, "mProjMatrix");
+	mVMatrix.debugPrint(debugPrintFlags, "mVMatrix");
 	Matrix3x3::mul(mMVPMatrix, mProjMatrix, mVMatrix); // result, lhs, rhs (result = lhs x rhs)
 
-	mMVPMatrix.debugPrint(debugLog, "mMVPMatrix");
+	mMVPMatrix.debugPrint(debugPrintFlags, "mMVPMatrix");
 
 	// clear frame buffer
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -786,8 +847,7 @@ void sceneManager::drawSanityFrame() {
 }
 
 void sceneManager::drawFrame() {
-	ULONGLONG timeSincelastupdate = now_ms()/*SystemClock.elapsedRealtime()*/
-		- updatetime;
+	ULONGLONG timeSincelastupdate = now_ms()-updatetime;
 	// 24 times per second, update the particles
 	if (drawFlags & PARTICLES && timeSincelastupdate > 1000 / updates_second) // 1000ms/24 = 42
 	{
@@ -814,26 +874,6 @@ void sceneManager::drawFrame() {
 					it++;
 				}
 		}
-
-		//for (int i = 0; i < particles.size(); i++) {
-		//	if (particles[i].expired()) {
-		//		//                    particles.remove(i);
-		//		if (i < particles.size()) {
-		//			// remove item at position i
-		//			std::vector<AParticle>::iterator it;
-		//			it = particles.begin();
-		//			int position = 1;
-		//			while (it != particles.end()) {
-		//				if (position == i)
-		//					break;
-		//				it++;
-		//			}
-		//			particles.erase(it);
-		//			// end remove
-		//		}
-		//		break;
-		//	}
-		//}
 
 		// Generate particles
 		//        long millis_since_last_particle = now_ms() - lastParticleTime;
@@ -907,10 +947,10 @@ void sceneManager::drawFrame() {
 			// result = lhs x rhs --- resultVec(vec) = rotateYaxisArray(mat) x particle_vector(vec)
 			Matrix3x3 rotateYaxisMatrix(rotateYaxisArray);
 
-			rotateYaxisMatrix.debugPrint(true, "rotateYaxisMatrix");
-			particle_vector.debugPrint(true, "particle_vector");
+			rotateYaxisMatrix.debugPrint(debugPrintFlags, "rotateYaxisMatrix");
+			//particle_vector.debugPrint(debugPrintFlags, "particle_vector");
 			Matrix3x3::mul(resultVec, rotateYaxisMatrix, particle_vector);
-			resultVec.debugPrint(true, "resultVec");
+//			resultVec.debugPrint(debugPrintFlags, "resultVec");
 
 			particle_vector.seta(resultVec.geta());
 			particle_vector.setb(resultVec.getb());
@@ -958,52 +998,86 @@ void sceneManager::drawFrame() {
 
 		// todo: check if allocation initializes to 0
 		//indicies = new GLushort[2 * 3 * particles.size() + obeliskVerts];
+		
+		// copy particle data to float type resizing array
+		{
+			std::vector<AParticle>::iterator it = particles.begin();
+			//int test = particles.size(); test;
 
-		std::vector<AParticle>::iterator it = particles.begin();
-		for (; it != particles.end(); it++) { // std::vector<AParticle> particles;
-			Point point = (*it).getRenderPos();
-			particleComponents->assign(vPos++, point.getx());
-			particleComponents->assign(vPos++, point.gety());
-			particleComponents->assign(vPos++, point.getz());
+			// shallow delete of old data
+			particleComponents->blank();
+			particleColors->blank();
 
-			// Log.d(TAG, "red: " + particle.getr());
-			particleColors->assign(pcPos++, (*it).getr());
+			for (; it != particles.end(); it++) { // std::vector<AParticle> particles;
+				Point current_point = (*it).getRenderPos();
+				
+				particleComponents->add(current_point.getx());
+				particleComponents->add(current_point.gety());
+				particleComponents->add(current_point.getz());
+				//particleComponents->assign(vPos++, point.getx());
+				//particleComponents->assign(vPos++, point.gety());
+				//particleComponents->assign(vPos++, point.getz());
 
-			// Log.d(TAG, "grn: " + particle.getg());
-			particleColors->assign(pcPos++, (*it).getg());
+				
+				float r = (*it).getr();
+				float g = (*it).getg();
+				float b = (*it).getb();
+				float a = (*it).geta();
 
-			// Log.d(TAG, "blu: " + particle.getb());
-			particleColors->assign(pcPos++, (*it).getb());
+				//float r = 1.0;
+				//float g = 1.0;
+				//float b = 1.0;
+				//float a = 1.0;
 
-			// Log.d(TAG, "alpha: " + particle.geta());
-			particleColors->assign(pcPos++, (*it).geta());
+				// add colors for 1st point in line segment
+				particleColors->add(r);
+				particleColors->add(g);
+				particleColors->add(b);
+				//particleColors->add(a);
 
-			Point prev = (*it).getPreviousPos(); // trailing part of line segment
-			particleComponents->assign(vPos++, prev.getx());
-			particleComponents->assign(vPos++, prev.gety());
-			particleComponents->assign(vPos++, prev.getz());
+				//// Log.d(TAG, "red: " + particle.getr());
+				//particleColors->assign(pcPos++, (*it).getr());
+				//// Log.d(TAG, "grn: " + particle.getg());
+				//particleColors->assign(pcPos++, (*it).getg());
+				//// Log.d(TAG, "blu: " + particle.getb());
+				//particleColors->assign(pcPos++, (*it).getb());
+				//// Log.d(TAG, "alpha: " + particle.geta());
+				//particleColors->assign(pcPos++, (*it).geta());
 
-			// Log.d(TAG, "red: " + particle.getr());
-			particleColors->assign(pcPos++, (*it).getr());
+				Point previous_point = (*it).getPreviousPos(); // trailing part of line segment
 
-			// Log.d(TAG, "grn: " + particle.getg());
-			particleColors->assign(pcPos++, (*it).getg());
+				particleComponents->add(previous_point.getx());
+				particleComponents->add(previous_point.gety());
+				particleComponents->add(previous_point.getz());
 
-			// Log.d(TAG, "blu: " + particle.getb());
-			particleColors->assign(pcPos++, (*it).getb());
+				// add colors for 2nd point in line segment
+				particleColors->add(r);
+				particleColors->add(g);
+				particleColors->add(b);
+				//particleColors->add(a);
+				//particleComponents->assign(vPos++, prev.getx());
+				//particleComponents->assign(vPos++, prev.gety());
+				//particleComponents->assign(vPos++, prev.getz());
 
-			// Log.d(TAG, "alpha: " + particle.geta());
-			particleColors->assign(pcPos++, (*it).geta());
+				//// Log.d(TAG, "red: " + particle.getr());
+				//particleColors->assign(pcPos++, (*it).getr());
+				//// Log.d(TAG, "grn: " + particle.getg());
+				//particleColors->assign(pcPos++, (*it).getg());
+				//// Log.d(TAG, "blu: " + particle.getb());
+				//particleColors->assign(pcPos++, (*it).getb());
+				//// Log.d(TAG, "alpha: " + particle.geta());
+				//particleColors->assign(pcPos++, (*it).geta());
+			}
 		}
 	}
 
 	changeLookAt();
 
-	mProjMatrix.debugPrint(debugLog, "mProjMatrix");
-	mVMatrix.debugPrint(debugLog, "mVMatrix");
+	mProjMatrix.debugPrint(debugPrintFlags, "mProjMatrix");
+	mVMatrix.debugPrint(debugPrintFlags, "mVMatrix");
 	Matrix3x3::mul(mMVPMatrix, mProjMatrix, mVMatrix); // result, lhs, rhs (result = lhs x rhs)
 
-	mMVPMatrix.debugPrint(debugLog, "mMVPMatrix");
+	mMVPMatrix.debugPrint(debugPrintFlags, "mMVPMatrix");
 
 	// Redraw background color
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1020,7 +1094,7 @@ void sceneManager::drawFrame() {
 	else {
 		setBasicProgram();
 		drawParticles();
-		drawGroundNoTexture();
+		//drawGroundNoTexture();
 		drawVolcano();
 	}
 
@@ -1108,29 +1182,36 @@ void sceneManager::drawFrame() {
 
 void sceneManager::drawVolcano() {
 	if (OBELISK & drawFlags) {
-		glVertexAttribPointer(vertex_attrib_idx,
-			3, // # of components per vertex attribute. Must be 1, 2, 3, or 4.
-			GL_FLOAT,
-			GL_FALSE, // Normalized?
-			3 * sizeof(GLfloat), // byte offset between vertex attributes. attribute is a set of elements
-			volcanoComponents->data()); // define vertex array
-
-		GLfloat* colorData = volcanoColors->data();
-		glVertexAttribPointer(color_attrib_idx,
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_volcano);
+		int volcanoComponentsBytes = volcanoComponents->size() * sizeof(GLfloat);
+		glVertexAttribPointer(static_cast<GLuint>(vertex_attrib_idx),
 			3, // # of components per generic vertex attribute
-			GL_FLOAT,
+			GL_FLOAT, // component data type
 			GL_FALSE, // normalized?
-			3 * sizeof(GLfloat), // byte offset between attributes. attribute is a set of elements
-			colorData);
+			3 * sizeof(GL_FLOAT), // byte offset between consecutive vertex attributes
+			0); // offset of the first component of the first generic vertex attribute in the array in the 
+				// data store of the buffer currently bound to the GL_ARRAY_BUFFER target.The initial value is 0.
 
+		glVertexAttribPointer(static_cast<GLuint>(color_attrib_idx),
+			3,
+			GL_FLOAT,
+			GL_FALSE,
+			3 * sizeof(GL_FLOAT),
+			(const GLvoid*)volcanoComponentsBytes);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_volcano_indices);
+		
 		glEnableVertexAttribArray(vertex_attrib_idx);
 		glEnableVertexAttribArray(color_attrib_idx);
 
-		// draw triangles for volcano
 		glDrawElements(GL_TRIANGLES,
 			volcanoIndices->size(),    // # of indicies in index array (# of short values, last param)
-			GL_UNSIGNED_SHORT,  // data type of index array
-			volcanoIndices->data());   // indicies_array
+			GL_UNSIGNED_SHORT,             // data type of index array
+			(const GLvoid*)0);   // indicies_array
+
+		// drawing finished, break bindings
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		glDisableVertexAttribArray(vertex_attrib_idx);
 		glDisableVertexAttribArray(color_attrib_idx);
@@ -1176,39 +1257,84 @@ void sceneManager::drawVolcanoWithTexture() {
 	}
 }
 
-void sceneManager::drawParticles() {
-	if (drawFlags & PARTICLES) {
-		vertex_attrib_idx = glGetAttribLocation(mProgram_particles, "vPosition");
-		glVertexAttribPointer(vertex_attrib_idx,
-			3, // # of components per vertex attribute. Must be 1, 2, 3, or 4.
-			GL_FLOAT,
-			GL_FALSE, // Normalized?
-			3 * sizeof(GLfloat), // byte offset between vertex attributes. attribute is a set of elements
-			particleComponents->data()); // define vertex array
+void sceneManager::setupParticles() {
 
-		GLfloat* colorData = particleColors->data();
+}
+
+void sceneManager::drawParticles() {
+	if ( (drawFlags & PARTICLES) && particleComponents->size() > 0) {
+		vertex_attrib_idx = glGetAttribLocation(mProgram_particles, "vPosition");
 		color_attrib_idx = glGetAttribLocation(mProgram_particles, "vColor");
-		glVertexAttribPointer(color_attrib_idx,
-			3, // # of components per generic vertex attribute
+
+		glBindBuffer(GL_ARRAY_BUFFER, vbo_particles);
+		int particleComponentsBytes = particleComponents->sizeBytes();
+		int particleColorsBytes = particleColors->sizeBytes();
+
+		if (debugPrintFlags & PARTICLEINFO) {
+			char formatString[] = "\n # floats: %d line segments(particles): %d particle components(bytes): %d";
+			int strsize = strlen(formatString) + 12;
+			char message[200] = { 0 };
+			sprintf_s(message, strsize, formatString, particleComponents->size(), particleComponents->size() /3/2, particleComponentsBytes);
+			OutputDebugString(message);
+		}
+		
+		int vertexCount = particleComponents->size() / 3;
+
+		glBufferData(GL_ARRAY_BUFFER, particleComponentsBytes + particleColorsBytes, NULL, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, particleComponentsBytes, particleComponents->data());
+		glBufferSubData(GL_ARRAY_BUFFER, particleComponentsBytes, particleColorsBytes, particleColors->data());
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glVertexAttribPointer(static_cast<GLuint>(vertex_attrib_idx),
+			3, // # of components
+			GL_FLOAT, // data type
+			GL_FALSE, // not normalized
+			3 * sizeof(GL_FLOAT), // byte offset between attribs or 0 for packed data
+			0); // offset into GL_ARRAY_BUFFER
+		
+		glVertexAttribPointer(static_cast<GLuint>(color_attrib_idx),
+			3,
 			GL_FLOAT,
-			GL_FALSE, // normalized?
-			3 * sizeof(GLfloat), // byte offset between attributes. attribute is a set of elements
-			colorData);
+			GL_FALSE,
+			3 * sizeof(GL_FLOAT),
+			(const GLvoid*) sizeof(particleComponents->size() * sizeof(GL_FLOAT)));
+
+		// indices are set up for the ALLOCATED size of the array, actual storage needed is only for the vertices to draw -- sizeof(GLushort) * vertexCount
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_particle_indices);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * vertexCount, particleIndicesPoints->data(), GL_STATIC_DRAW);
 
 		glEnableVertexAttribArray(vertex_attrib_idx);
 		glEnableVertexAttribArray(color_attrib_idx);
 
-		// Draw the particles.  each particle is a little line segment
-		glDrawElements(GL_LINES,
-			particleIndicesLines->size(),    // # of indicies in index array (# of short values, last param)
-			GL_UNSIGNED_SHORT,  // data type of index array
-			particleIndicesLines->data());   // indicies_array
+		// output particle debug data
+		char message[255] = { 0 };
+		char line1format[] = "\nframe %d";
+		sprintf_s(message, 255, line1format, framesdrawn);
+		OutputDebugString(message);
+		char linexformat[] = "\n\tid: %d\tpos: (%f, %f, %f)\t\tcolor: (%f, %f, %f)";
+		for (int i = 0; i < particleComponents->size()/3; i++) {
+			memset(message, '\0', 255);
+			GLfloat x=0, y=0, z=0;
+			GLfloat r = 0, g = 0, b = 0;
+			int offsetvertex = i * 3;
+			x = *(particleComponents->data() + (offsetvertex + 0));
+			y = *(particleComponents->data() + (offsetvertex + 1));
+			z = *(particleComponents->data() + (offsetvertex + 2));
 
-											 // Draw the particles as points
+			int offsetcolor = i * 3;
+			r = *(particleColors->data() + (offsetcolor + 0));
+			g = *(particleColors->data() + (offsetcolor + 1));
+			b = *(particleColors->data() + (offsetcolor + 2));
+			sprintf_s(message, 255, linexformat, i, x,y,z, r,g,b);
+			OutputDebugString(message);
+		}
+
 		glDrawElements(GL_POINTS,
-			particleIndicesPoints->size(),    // # of indicies in index array (# of short values, last param)
-			GL_UNSIGNED_SHORT,  // data type of index array
-			particleIndicesPoints->data());   // indicies_array
+			//particleIndicesLines->size(),    // # of indicies in index array (# of short values, last param)
+			vertexCount,
+			GL_UNSIGNED_SHORT,             // data type of index array
+			(const GLvoid*)0);   // indicies_array
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		glDisableVertexAttribArray(vertex_attrib_idx);
 		glDisableVertexAttribArray(color_attrib_idx);

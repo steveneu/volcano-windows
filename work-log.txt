@@ -1,5 +1,26 @@
 work log, volcano port to windows
 
+11/16	* sick day, slept in to 2:30 with headache
+	* fixed clipped particles not drawing at emitter location
+		glDrawElements() did not have correct # of elements passed.  also fixes to parameters sent to buffer draw calls.  clean up vbo memory layout
+
+11/15	* debugging clipped particles bug
+
+11/14	* debugging clipped particles bug
+
+11/13
+	* got rotation working for 1 axis.  
+
+11/8/2017
+	* got particles as points drawing (i think)
+	* fixed problem with resizing array not using N member
+
+11/6/2017
+	* got sanity frame drawing by turning off backface culling
+		- standard draw function did not work (it's not using vbo/vao)
+11/4/2017
+	* try drawing sanity triangle using VAO, VBO (still black frame)
+
 10/31 -
 	* refactoring/porting work for windows application
 	* got shader file i/o coding working & compile/link

@@ -107,6 +107,33 @@ void Matrix3x3::makeTranslation(float a, float b, float c) {
     m[14] = c;
 }
 
+// make this matrix a rotation matrix for given angles about their respective axes
+// params:
+// phi - angle of rotation about x axis (radians)
+// theta - angle of rotation about y axis (radians)
+// psi - angle of rotation about z axis (default to 0) (radians)
+void Matrix3x3::makeRotation(float phi, float theta, float psi/*=0.0*/) {
+	m[0] = cos(theta) * cos(psi); // column 0
+	m[1] = cos(theta) * sin(psi);
+	m[2] = -sin(theta);
+	m[3] = 0;
+
+	m[4] = -cos(phi) * sin(psi) + sin(phi) * sin(theta) * cos(psi); // column 1
+	m[5] = cos(phi) * cos(psi) + sin(phi) * sin(theta) * sin(psi);
+	m[6] = sin(phi) * cos(theta);
+	m[7] = 0;
+
+	m[8] = sin(phi) * sin(psi) + cos(phi) * sin(theta) * cos(psi); // col 2
+	m[9] = -sin(phi) * cos(psi) + cos(phi) * sin(theta) * sin(psi);
+	m[10] = cos(phi) * cos(theta);
+	m[11] = 0;
+
+	m[12] = 0; // col 3
+	m[13] = 0;
+	m[14] = 0;
+	m[15] = 1;
+}
+
 // set the matrix element directly based on its index
 void Matrix3x3::set(int idx, float newvalue) {
     m[idx] = newvalue;
@@ -276,9 +303,9 @@ void Matrix3x3::setcol(int c, const Vec3& v) {
     m[offset+3] = v.getd();
 }
 
-void Matrix3x3::debugPrint(bool debugPrint, const char* matrix_id) {
-    if (debugPrint) {
-		char firstLineFormat[] = "%s: \n";
+void Matrix3x3::debugPrint(unsigned int debugPrintFlags, const char* matrix_id) {
+    if (debugPrintFlags & MATRIX) {
+		char firstLineFormat[] = "\n%s: \n";
 		char matrixRowFormat[] = "\t%.3f\t%.3f\t%.3f\t%.3f\n";
 		int string_size = strlen(matrix_id) + strlen(firstLineFormat);
 		char* message = new char[string_size];

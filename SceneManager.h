@@ -6,6 +6,7 @@
 #include "Matrix3x3.h"
 #include "particle.h"
 #include "ResizingArray.h"
+#include "types.h"
 
 #include <vector>
 #include <iostream>
@@ -13,12 +14,7 @@
 
 using namespace std;
 
-static const unsigned short TRIANGLE = 0x1; // for sanity check
-static const unsigned short OBELISK = 0x2;
-static const unsigned short PARTICLES = 0x4;
-static const unsigned short GROUND = 0x8;
-static const unsigned short TEXTURE = 0x10;
-static const unsigned short WIREFRAME = 0x20;        // draw wireframes, if available
+
 
 static const char* TAG = "Particle";
 static const int vCount = 48;              // number of values in vertex array for obelisk
@@ -33,6 +29,7 @@ class sceneManager {
 	int current_mode;
 	unsigned short drawModes[mode_count];
 	unsigned short drawFlags;
+	unsigned short debugPrintFlags;
 	GLuint mProgram_particles;
 	GLuint mProgram_texmesh;
 
@@ -68,7 +65,6 @@ class sceneManager {
 	Vec3 gravity;
 
 	bool windowInitialized;
-	bool debugLog;
 
 	bool first_egl_query;
 
@@ -76,8 +72,15 @@ class sceneManager {
 	float colordata[4];
 
 	GLuint vao;
-	GLuint vbo;
-	GLuint indexbo;
+	GLuint vbo_sanity;
+	GLuint vbo_particles;
+	GLuint vbo_ground;
+	GLuint vbo_volcano;
+
+	GLuint indexbo_sanity;
+	GLuint vbo_particle_indices;
+	GLuint indexbo_ground;
+	GLuint vbo_volcano_indices;
 
 	ResizingArray<GLfloat>* volcanoComponents;
 	ResizingArray<GLushort>* volcanoIndices;
@@ -109,7 +112,6 @@ class sceneManager {
 	void drawVolcanoWithTexture();
 	void drawGroundNoTexture();
 	void drawGroundWithTexture();
-	void drawParticles();
 
 	void setTextureProgram();
 	void setBasicProgram();
@@ -147,7 +149,10 @@ public:
 	void createPrograms(const char* pVertexSource, const char* pFragmentSource,
 		const char* pVertexTextureSrc, const char* pFragmentTextureSrc);
 	void surfaceChanged(int w, int h);
-	void setupBuffers();
+	void sanityCheckSetup();
 	void drawFrame();
 	void drawSanityFrame();
+
+	void setupParticles();
+	void drawParticles();
 };

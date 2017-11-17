@@ -55,10 +55,12 @@ public:
 	}
 
 	// regarding color, transition from r,g,b,a to final_r,final_g,final_b,final_a during the life of the particle
-	AParticle(float ptx, float pty, float ptz, float dira, float dirb, float dirc,
+	AParticle(float ptx, float pty, float ptz, // initial position
+		float dira, float dirb, float dirc, // velocity and direction vector
 		float r, float g, float b, float a, // initial color
 		float f_r, float f_g, float f_b, float f_a, // final color
-		Vec3 gr, int iLifetime)
+		Vec3 gr, // gravity vector
+		int iLifetime) // lifetime in milliseconds
 	{
 		current_position.putx(ptx);
 		current_position.puty(pty);

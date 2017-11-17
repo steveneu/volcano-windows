@@ -4,6 +4,7 @@
 
 #include "Vec3.h"
 #include "Point.h"
+#include "strsafe.h"
 
 Vec3::Vec3() {
     a = b = c = 0;
@@ -93,8 +94,27 @@ Vec3 Vec3::subtract(const Vec3& left, const Vec3& right) {
 }
 
 //void Matrix3x3::debugPrint(bool debugPrint, const char* matrix_id) {
-void Vec3::debugPrint(bool debugPrint, const char* vec_string) {
-    if (debugPrint) {
+void Vec3::debugPrint(unsigned int debugPrintFlags, const char* vec_string) {
+    if (debugPrintFlags & MATRIX) {
+		char* out1;
+		char format1[] = "\n%s: ";
+		int out1_size = strlen(vec_string) + strlen(format1);
+		out1 = new char[out1_size];
+		memset(out1, '\0', out1_size);
+
+		sprintf_s(out1, out1_size, format1, vec_string);
+		OutputDebugString(out1);
+		delete[] out1;
+
+		char format_string[] = "\t%.3f\t%.3f\t%.3f\t%.3f";
+		char* message;
+		int string_size = strlen(format_string) + strlen(vec_string) + 4 * 5;
+		message = new char[string_size];
+		memset(message, '\0', string_size);
+		
+		sprintf_s(message, string_size, format_string, a, b, c, d);
+		OutputDebugString(message);
+		delete[] message;
         //LOGI("%s: \n", vec_string);
         //LOGI("\t%.3f\t%.3f\t%.3f\t%.3f", a, b, c, d);
     }

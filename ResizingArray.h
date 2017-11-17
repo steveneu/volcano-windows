@@ -53,9 +53,19 @@ public:
         return N == 0;
     }
 
+	// shallow delete the data in the array by setting its size to 0.  
+	// does not overwrite existing data or alter the allocated size 
+	void blank() {
+		N = 0;
+	}
+
     int size() const {
         return N;
     }
+
+	int sizeBytes() const {
+		return (N * sizeof(T));
+	}
 
     void resize(int newsize) {
         T* tempItems = new T[newsize](); // (T*)malloc(newsize*sizeof(T));
