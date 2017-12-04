@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "SceneManager.h"
+#include "lodepng.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -81,11 +82,14 @@ int main()
 
 	sceneManager scene;
 
-	scene.printGLString("Vendor", GL_VENDOR);
-	scene.printGLString("Renderer", GL_RENDERER);
-	scene.printGLString("Version", GL_VERSION);
-	scene.printGLString("Shader compiler version", GL_SHADING_LANGUAGE_VERSION);
 	scene.printGLString("Extensions", GL_EXTENSIONS);
+	scene.printGLString("vendor", GL_VENDOR);
+	scene.printGLString("renderer", GL_RENDERER);
+	scene.printGLString("version", GL_VERSION);
+	scene.printGLString("shading language version", GL_SHADING_LANGUAGE_VERSION);
+
+	cout << "\nMove pointer to change camera location, <ESC> to quit";
+
 	GLint64 majorVersion = 0;
 	GLint64 minorVersion = 0;
 	glGetInteger64v(GL_MAJOR_VERSION, &majorVersion);
@@ -95,7 +99,18 @@ int main()
 
 	// TODO: need equivalent of Java_com_neusoft_particle_ObjectJNI_jni_1pushTexture here
 	// when ready with texture file loading
-	scene.initTextures();
+	//scene.initTextures();
+	vector<unsigned char> image;
+	unsigned width = 0, height = 0;
+	//const char* bitmap_file = "Z:\\Software-dev\\volcano-windows\\volcano_ground.png";
+	const char* bitmap_file = "volcano_ground.png";
+	unsigned error = lodepng::decode(image, width, height, bitmap_file);
+	
+	if (error) { 
+		cout << endl << "decoder error " << error << ": " << lodepng_error_text(error) << endl;
+	}
+
+	scene.storeTexture(image.data(), width, height);
 
 	scene.surfaceChanged(SCR_WIDTH, SCR_HEIGHT);
 	//float orientation[] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};

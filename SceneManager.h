@@ -43,6 +43,9 @@ class sceneManager {
 	Matrix3x3 mMVPMatrix;
 	Matrix3x3 mVMatrix;
 	Matrix3x3 mProjMatrix;
+	Matrix3x3 mLookAtMat;
+	Vec3 cameraPos;
+	Vec3 upVector;
 	float vCameraPos[4]; // = new float[4];
 	float vUpVector[4]; // = new float[4];
 	float vCurrentUpVector[4]; // = new float[4];
@@ -81,9 +84,11 @@ class sceneManager {
 	GLuint vbo_particle_indices;
 	GLuint indexbo_ground;
 	GLuint vbo_volcano_indices;
+	GLuint vbo_volcano_indices_lines;
 
 	ResizingArray<GLfloat>* volcanoComponents;
 	ResizingArray<GLushort>* volcanoIndices;
+	ResizingArray<GLushort>* volcanoIndicesLines;
 	ResizingArray<GLfloat>* volcanoColors;
 	ResizingArray<GLfloat>* volcanoTexComponents;
 
@@ -105,6 +110,7 @@ class sceneManager {
 	}
 
 	void setupVolcanoData();
+	void setupVolcanoTextureData();
 	void setupGroundData();
 	void setupParticleData();
 

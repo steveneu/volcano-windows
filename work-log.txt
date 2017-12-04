@@ -1,5 +1,11 @@
 work log, volcano port to windows
 
+12/4	* texture loading works with lodepng software
+
+11/21   * got textures working on generated checkerboard
+
+11/20 	* added wireframe for volcano
+
 11/16	* sick day, slept in to 2:30 with headache
 	* fixed clipped particles not drawing at emitter location
 		glDrawElements() did not have correct # of elements passed.  also fixes to parameters sent to buffer draw calls.  clean up vbo memory layout

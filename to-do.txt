@@ -19,7 +19,7 @@ un-portable code:
 
 todo:
 
-	* changeLookAt() is called once per frame, probably only need to multiply orientation matrix, 
+	x changeLookAt() is called once per frame, probably only need to multiply orientation matrix, 
 		store other values (as members):
 			target, upvector, camerapos
 
