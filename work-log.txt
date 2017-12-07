@@ -1,4 +1,10 @@
 work log, volcano port to windows
+12/6	* fixed non-textured ground drawing.  the 4th parameter in glDrawElements() was not an offset, but a data pointer 
+	* added include dirs for glad & glfw to release build configuration
+	* when running from command line, need these files in the same dir as exe:
+		volcano_ground.png, particle.vp, particle.fp, texmesh.vp, texmesh.fp 
+
+12/5    * fixed corrupt heap, random exceptions thrown during runtime: (in link shaders, read shader source, etc.) exceptions change when stepping thru code. need resizing arrays to not call resize(), that is make sure the reserved storage is less than the number of items added.  possibly do a through unit test on resizing array. added glfw error callback
 
 12/4	* texture loading works with lodepng software
 

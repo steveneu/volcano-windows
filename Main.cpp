@@ -39,6 +39,12 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	OutputDebugString(message);
 }
 
+// handle glfw errors
+void error_callback(int error, const char* description)
+{
+	puts(description);
+}
+
 int main()
 {
 	rotAboutx = 0.0;
@@ -46,6 +52,9 @@ int main()
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
+
+	glfwSetErrorCallback(error_callback);
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

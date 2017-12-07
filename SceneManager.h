@@ -82,7 +82,7 @@ class sceneManager {
 
 	GLuint indexbo_sanity;
 	GLuint vbo_particle_indices;
-	GLuint indexbo_ground;
+	GLuint vbo_ground_indices;
 	GLuint vbo_volcano_indices;
 	GLuint vbo_volcano_indices_lines;
 
@@ -110,7 +110,7 @@ class sceneManager {
 	}
 
 	void setupVolcanoData();
-	void setupVolcanoTextureData();
+	void volcanoTextureData();
 	void setupGroundData();
 	void setupParticleData();
 
@@ -159,6 +159,5 @@ public:
 	void drawFrame();
 	void drawSanityFrame();
 
-	void setupParticles();
 	void drawParticles();
 };
